@@ -1,52 +1,51 @@
 pipeline {
-    agent {
-        docker {
-            image 'node:18'
-        }
+  agent {
+    label 'linux'
+  }
+
+  environment {
+    NODE_VERSION = '18'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
     }
 
-    environment {
-        NODE_ENV = 'development'
+    stage('Setup Node.js') {
+      steps {
+        sh '''
+          curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+        '''
+      }
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Install dependencies') {
-            steps {
-                sh 'npm ci'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                sh 'npm run build || true' // Изпълнява, ако има build скрипт
-            }
-        }
-
-        stage('Start App') {
-            steps {
-                sh 'npm run start &'
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                sh 'npm test'
-            }
-        }
+    stage('Install dependencies') {
+      steps {
+        sh 'npm ci'
+      }
     }
 
-    post {
-        always {
-            echo 'Pipeline completed.'
-        }
-        failure {
-            echo 'Pipeline failed.'
-        }
+    stage('Build') {
+      steps {
+        sh 'npm run build || echo "No build script defined"'
+      }
     }
+
+    stage('Start server') {
+      steps {
+        sh 'nohup npm run start &'
+        sh 'sleep 5'
+      }
+    }
+
+    stage('Run tests') {
+      steps {
+        sh 'npm test'
+      }
+    }
+  }
 }
