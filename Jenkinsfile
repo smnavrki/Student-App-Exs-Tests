@@ -12,54 +12,39 @@ pipeline {
       }
     }
 
-    stage('Setup Node.js') {
+    stage('Check Node.js & npm') {
       steps {
-        // Ако имаш NodeJS plugin, използвай го:
-        // tools { nodejs "NodeJS 18" }
-        // Ако не, използвай следното:
-        sh '''
-          if ! command -v node > /dev/null; then
-            curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-          fi
-        '''
-        sh 'node -v'
-        sh 'npm -v'
+        bat 'node -v'
+        bat 'npm -v'
       }
     }
 
     stage('Install dependencies') {
       steps {
-        sh 'npm ci'
+        bat 'npm ci'
       }
     }
 
     stage('Test') {
       steps {
         echo 'Стартиране на сървъра и изпълнение на тестовете...'
-        // Стартирай сървъра във фонов режим, изчакай го, пусни тестовете, спри сървъра
-        sh '''
-          nohup npm start > server.log 2>&1 & echo $! > .server_pid
-          for i in {1..15}; do
-            nc -z localhost 8080 && break
-            sleep 1
-          done
-          npm test
-        '''
+        // Стартирай сървъра във фонов режим
+        bat 'start /b cmd /c "npm start > server.log 2>&1"'
+        // Изчакай 5 секунди сървърът да се стартира
+        bat 'timeout /t 5'
+        // Стартирай тестовете
+        bat 'npm test'
       }
     }
   }
 
   post {
     always {
-      echo 'Спиране на сървъра и показване на логовете...'
-      sh '''
-        if [ -f .server_pid ]; then
-          kill $(cat .server_pid) || true
-          rm .server_pid
-        fi
-        cat server.log || true
-      '''
+      echo 'Показване на логовете и спиране на сървъра...'
+      // Покажи логовете на сървъра (ако има)
+      bat 'type server.log || exit 0'
+      // Убий всички node процеси (ако има останали)
+      bat 'taskkill /F /IM node.exe || exit 0'
     }
   }
 }
