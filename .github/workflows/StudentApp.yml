@@ -33,8 +33,10 @@ jobs:
       - name: Build the app (if applicable)
         run: npm run build --if-present
 
-      - name: Start the app
-        run: npm run start
+      - name: Start the app in background
+        run: |
+          npm run start &
+          sleep 5
 
       - name: Run tests
         run: npm test
