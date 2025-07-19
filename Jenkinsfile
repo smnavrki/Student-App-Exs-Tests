@@ -1,20 +1,11 @@
 pipeline {
-  agent {
-    label 'linux'
-  }
+  agent { label 'linux' }
 
   environment {
     NODE_VERSION = '18'
   }
 
   stages {
-    stage('Warm-up') {
-      steps {
-        echo 'Изчакване за освобождаване на executor...'
-        sh 'sleep 10'
-      }
-    }
-
     stage('Checkout') {
       steps {
         checkout scm
@@ -23,12 +14,14 @@ pipeline {
 
     stage('Setup Node.js') {
       steps {
-        // Ако имаш NodeJS plugin:
-        // tool name трябва да съвпада с инсталирания NodeJS tool в Jenkins
-        // withEnv(["PATH+NODE=${tool 'NodeJS 18'}/bin"]) { ... }
+        // Ако имаш NodeJS plugin, използвай го:
+        // tools { nodejs "NodeJS 18" }
+        // Ако не, използвай следното:
         sh '''
-          curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
-          sudo apt-get install -y nodejs
+          if ! command -v node > /dev/null; then
+            curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+          fi
         '''
         sh 'node -v'
         sh 'npm -v'
@@ -41,38 +34,32 @@ pipeline {
       }
     }
 
-    stage('Start server') {
+    stage('Test') {
       steps {
-        echo 'Стартиране на сървъра във фонов режим...'
-        sh 'nohup npm start > server.log 2>&1 & echo $! > .server_pid'
-        // Изчакай порт 8080 да е отворен (до 15 секунди)
+        echo 'Стартиране на сървъра и изпълнение на тестовете...'
+        // Стартирай сървъра във фонов режим, изчакай го, пусни тестовете, спри сървъра
         sh '''
+          nohup npm start > server.log 2>&1 & echo $! > .server_pid
           for i in {1..15}; do
             nc -z localhost 8080 && break
             sleep 1
           done
+          npm test
         '''
-      }
-    }
-
-    stage('Run tests') {
-      steps {
-        echo 'Изпълняване на тестовете...'
-        sh 'npm test'
       }
     }
   }
 
   post {
     always {
-      echo 'Спиране на сървъра...'
+      echo 'Спиране на сървъра и показване на логовете...'
       sh '''
         if [ -f .server_pid ]; then
           kill $(cat .server_pid) || true
           rm .server_pid
         fi
+        cat server.log || true
       '''
-      sh 'cat server.log || true'
     }
   }
 }
