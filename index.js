@@ -1,5 +1,9 @@
-const fetch = require('node-fetch');
-global.fetch = require('node-fetch');
+// Remove the require('node-fetch') lines and use dynamic import if needed
+if (typeof fetch === 'undefined') {
+  (async () => {
+    global.fetch = (await import('node-fetch')).default;
+  })();
+}
 
 const express = require('express');
 const app = express();
