@@ -1,5 +1,5 @@
 pipeline {
-  agent { label 'linux' }
+  agent { label 'windows' }
 
   environment {
     NODE_VERSION = '18'
