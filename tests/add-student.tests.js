@@ -2,8 +2,11 @@ const assert = require('assert');
 
 const axios = require('axios');
 
-
 suite('Add Students page', function() {
+  setup(async function() {
+    await axios.post('http://localhost:8080/__reset');
+  });
+
   test('Page title', async function() {
     let res = await axios.get("http://localhost:8080/add-student");
     let body = await res.data;
@@ -41,7 +44,7 @@ suite('Add Students page', function() {
 
   test('Add invalid student', async function() {
     let res = await axios.post("http://localhost:8080/add-student", 
-  "name=Peter&email=peter%40gmail.com", 
+  "name=&email=", 
   {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"

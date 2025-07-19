@@ -10,9 +10,13 @@ app.use(require('body-parser')
 const studentsController = 
   require("./controllers/students-controller");
 
-let students = require("./models/students-model");
+const studentsModel = require("./models/students-model");
+let students = studentsModel.students;
 
 studentsController.setup(app, students);
+
+// Expose resetStudents for tests
+app.locals.resetStudents = studentsModel.resetStudents;
 
 let port = process.argv[2];
 if (!port) port = process.env['PORT'];

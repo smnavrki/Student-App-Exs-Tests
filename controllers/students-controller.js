@@ -49,7 +49,19 @@ function setup(app, students) {
       email: req.body.email
     };
     students.push(student);
-    res.redirect('/students');
+    // Instead of redirect, render students list directly
+    let model = {title: "Students", students};
+    res.render('students', model);
+  });
+
+  // Test-only endpoint to reset students
+  app.post('/__reset', function(req, res) {
+    if (app.locals.resetStudents) {
+      app.locals.resetStudents();
+      res.status(204).send();
+    } else {
+      res.status(500).send('Reset not available');
+    }
   });
 }
 

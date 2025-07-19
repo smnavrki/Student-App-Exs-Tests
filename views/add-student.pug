@@ -1,6 +1,8 @@
 include header.pug
 
 h1 Register New Student
+if errMsg
+  p(style="color:red") #{errMsg}
 form(method='POST' action='/add-student')
   div
     label(for='name') Name: 
