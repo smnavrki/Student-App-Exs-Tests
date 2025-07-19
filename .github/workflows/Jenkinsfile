@@ -8,6 +8,13 @@ pipeline {
   }
 
   stages {
+    stage('Warm-up') {
+      steps {
+        echo 'Изчакване за освобождаване на executor...'
+        sh 'sleep 10'
+      }
+    }
+
     stage('Checkout') {
       steps {
         checkout scm
@@ -31,12 +38,19 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh 'npm run build || echo "No build script defined"'
+        script {
+          try {
+            sh 'npm run build'
+          } catch (err) {
+            echo 'Няма дефиниран build скрипт – продължаваме нататък.'
+          }
+        }
       }
     }
 
     stage('Start server') {
       steps {
+        echo 'Стартиране на сървъра във фонов режим...'
         sh 'nohup npm run start &'
         sh 'sleep 5'
       }
@@ -44,6 +58,7 @@ pipeline {
 
     stage('Run tests') {
       steps {
+        echo 'Изпълняване на тестовете...'
         sh 'npm test'
       }
     }
