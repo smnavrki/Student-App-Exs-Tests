@@ -1,0 +1,52 @@
+pipeline {
+    agent {
+        docker {
+            image 'node:18'
+        }
+    }
+
+    environment {
+        NODE_ENV = 'development'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install dependencies') {
+            steps {
+                sh 'npm ci'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'npm run build || true' // Изпълнява, ако има build скрипт
+            }
+        }
+
+        stage('Start App') {
+            steps {
+                sh 'npm run start &'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'npm test'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline completed.'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}
